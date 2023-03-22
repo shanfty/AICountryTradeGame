@@ -1,9 +1,13 @@
 from asyncore import read
+from contextlib import redirect_stdout
 from typing import List
 from dataclasses import dataclass, field
 import os
 import re
 import csv
+
+from countries import Country
+from resource import Resource
 
 @dataclass
 class ResourceQuantity:
@@ -93,28 +97,46 @@ def read_csv(file_path: str) -> List[dict]:
   return entries
 
 def main():
-    resourceWeights = read_csv("weights.csv")
-    print(resourceWeights)
-    print(" ")
+    resourceCSV = read_csv("weights.csv")
+    resources = []
+    for resource_data in resourceCSV:
+        resource = Resource(resource_data['Resource'], resource_data['Weight'])
+        resources.append(resource)
 
-    state = read_csv("initialState.csv")
-    print(state)
-    print(" ")
+    for each in resources:
+        each.info()
+    print("\n")
 
-    alloysPath="./transforms/alloys.tmpl"
-    alloysTemplate = parse(alloysPath)
-    print(alloysTemplate)
-    print(" ")
 
-    housingPath="./transforms/housing.tmpl"
-    housingTemplate = parse(housingPath)
-    print(housingTemplate)
-    print(" ")
+    initialData = read_csv("initialData.csv")
 
-    electronicsPath="./transforms/electronics.tmpl"
-    electronicsTemplate = parse(electronicsPath)
-    print(electronicsTemplate)
-    print(" ")
+    countries = []
+    for country_data in initialData:
+        country = Country(country_data['Country'], country_data['Population'], country_data['MetallicElements'], country_data['Timber'], country_data['MetallicAlloys'], country_data['Electronics'], country_data['Housing'])
+        countries.append(country)
+
+    i = 0
+    for each in countries:
+        print("Country " + str(i))
+        each.info()
+        print("\n")
+        i += 1
+    
+
+    #alloysPath="./transforms/alloys.tmpl"
+    #alloysTemplate = parse(alloysPath)
+    #print(alloysTemplate)
+    #print(" ")
+
+    #housingPath="./transforms/housing.tmpl"
+    #housingTemplate = parse(housingPath)
+    #print(housingTemplate)
+    #print(" ")
+
+    #electronicsPath="./transforms/electronics.tmpl"
+    #electronicsTemplate = parse(electronicsPath)
+    #print(electronicsTemplate)
+    #print(" ")
 
 if __name__ == "__main__":
     main()
