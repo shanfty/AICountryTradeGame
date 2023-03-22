@@ -101,9 +101,19 @@ def main():
     print(state)
     print(" ")
 
-    template_path="./alloys.tmpl"
-    transform_template = parse(template_path)
-    print(transform_template)
+    alloysPath="./transforms/alloys.tmpl"
+    alloysTemplate = parse(alloysPath)
+    print(alloysTemplate)
+    print(" ")
+
+    housingPath="./transforms/housing.tmpl"
+    housingTemplate = parse(housingPath)
+    print(housingTemplate)
+    print(" ")
+
+    electronicsPath="./transforms/electronics.tmpl"
+    electronicsTemplate = parse(electronicsPath)
+    print(electronicsTemplate)
     print(" ")
 
 if __name__ == "__main__":
