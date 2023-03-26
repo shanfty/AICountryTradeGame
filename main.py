@@ -2,12 +2,14 @@ from asyncore import read
 from contextlib import redirect_stdout
 from typing import List
 from dataclasses import dataclass, field
+from collections import deque
 import os
 import re
 import csv
 
 from countries import Country
 from resource import Resource
+
 
 @dataclass
 class ResourceQuantity:
@@ -96,6 +98,67 @@ def read_csv(file_path: str) -> List[dict]:
   
   return entries
 
+def state_quality(countries, resources):
+    resource_dict = {r.name: r for r in resources}
+    for country in countries:
+        score = 0
+        #attributes = vars(country)
+        attributes = {attr: getattr(country, attr) for attr in dir(country) if not callable(getattr(country, attr)) and not attr.startswith("__")}
+        for attribute, value in attributes.items():
+            if attribute in resource_dict:
+                # add the score for this resource to the total score for the country
+                score += value * resource_dict[attribute].weight
+        # return overall score
+        return score
+
+def apply_transform_template(country: Country, template: TransformTemplate) -> None:
+    newCountry = country
+    # Check if country has enough resources to perform transformation
+    for input_resource in template.inputs:
+        if input_resource.name == 'Population':
+            continue  # Population is not consumed
+        if getattr(newCountry, input_resource.name) < input_resource.quantity:
+            return None
+    
+    # Subtract required inputs
+    for input_resource in template.inputs:
+        if input_resource.name == 'Population':
+            continue  # Population is not consumed
+        setattr(newCountry, input_resource.name, getattr(newCountry, input_resource.name) - input_resource.quantity)
+    
+    # Add generated outputs
+    for output_resource in template.outputs:
+        setattr(newCountry, output_resource.name, getattr(newCountry, output_resource.name) + output_resource.quantity)
+
+    return newCountry
+
+
+def search_best_transform(countries, transforms, resources):
+        best_score = state_quality(countries, resources)
+        best_transform = None
+        best_country = None
+
+        for transform in transforms:
+            # apply the transform to each country
+            count = 0
+            for country in countries:
+                new_country = apply_transform_template(country, transform)
+                if(new_country == None):
+                    continue
+                copyCountries = countries
+                copyCountries[count] = new_country
+                # calculate the score for the new list of countries
+                new_score = state_quality(copyCountries, resources)
+                # check if the new score is better than the current best score
+                if new_score > best_score:
+                    best_score = new_score
+                    best_transform = transform
+                    best_country = count
+                count += 1
+                
+        return best_transform,best_country
+
+
 def main():
     resourceCSV = read_csv("weights.csv")
     resources = []
@@ -107,13 +170,14 @@ def main():
         each.info()
     print("\n")
 
-
-    initialData = read_csv("initialData.csv")
-
     countries = []
-    for country_data in initialData:
-        country = Country(country_data['Country'], country_data['Population'], country_data['MetallicElements'], country_data['Timber'], country_data['MetallicAlloys'], country_data['Electronics'], country_data['Housing'])
-        countries.append(country)
+    with open ('initialData.csv') as initialData:
+        reader = csv.reader(initialData)
+        next(reader)
+    
+        for country_data in reader:
+            country = Country(*country_data)
+            countries.append(country)
 
     i = 0
     for each in countries:
@@ -121,22 +185,45 @@ def main():
         each.info()
         print("\n")
         i += 1
+
+    start_score = state_quality(countries, resources)
     
 
-    #alloysPath="./transforms/alloys.tmpl"
-    #alloysTemplate = parse(alloysPath)
-    #print(alloysTemplate)
-    #print(" ")
+    templates = []
 
-    #housingPath="./transforms/housing.tmpl"
-    #housingTemplate = parse(housingPath)
-    #print(housingTemplate)
-    #print(" ")
+    alloysPath="./transforms/alloys.tmpl"
+    alloysTemplate = parse(alloysPath)
+    templates.append(alloysTemplate)
 
-    #electronicsPath="./transforms/electronics.tmpl"
-    #electronicsTemplate = parse(electronicsPath)
-    #print(electronicsTemplate)
-    #print(" ")
+    housingPath="./transforms/housing.tmpl"
+    housingTemplate = parse(housingPath)
+    templates.append(housingTemplate)
+
+    electronicsPath="./transforms/electronics.tmpl"
+    electronicsTemplate = parse(electronicsPath)
+    templates.append(electronicsTemplate)
+
+    best_transform, best_country = search_best_transform(countries,templates,resources)
+
+    transformIndex = 0
+    while(best_transform != None):
+        best_transform, best_country = search_best_transform(countries,templates,resources)
+        if(best_transform != None):
+            apply_transform_template(countries[best_country], best_transform)
+            transformIndex += 1
+
+    i = 0
+    for each in countries:
+        print("Country " + str(i))
+        each.info()
+        print("\n")
+        i += 1
+
+    end_score = state_quality(countries,resources)
+
+    print("\nTransforms made: " + str(transformIndex))
+    print("\nStarting State Quality Score: " + str(start_score))
+    print("\nEnding State Quality Score: " + str(end_score))
 
 if __name__ == "__main__":
     main()

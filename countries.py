@@ -6,11 +6,14 @@ class Country(object):
     metallicAlloys = 0
     electronics = 0
     housing = 0
-    metallicAlloyWaste = 0
-    electronicWaste = 0
+    metallicAlloysWaste = 0
+    electronicsWaste = 0
     housingWaste = 0
+    water = 0
+    availableLand = 0
+    potentialEnergyUsable = 0
 
-    def __init__(self, name, population, metallicElements, timber, metallicAlloys, electronics, housing, metallicAlloyWaste = 0, electronicWaste = 0, housingWaste = 0):
+    def __init__(self, name, population, metallicElements = 0, timber = 0, metallicAlloys = 0, electronics = 0, housing = 0, availableLand = 0, water = 0, potentialEnergyUsable = 0, metallicAlloysWaste = 0, electronicsWaste = 0, housingWaste = 0):
         self.name = name
         self.population = int(population)
         self.metallicElements = int(metallicElements)
@@ -18,10 +21,14 @@ class Country(object):
         self.metallicAlloys = int(metallicAlloys)
         self.electronics = int(electronics)
         self.housing = int(housing)
-        self.metallicAlloyWaste = int(metallicAlloyWaste)
-        self.electronicWaste = int(electronicWaste)
+        self.metallicAlloysWaste = int(metallicAlloysWaste)
+        self.electronicsWaste = int(electronicsWaste)
         self.housingWaste = int(housingWaste)
-    
+        self.availableLand = int(availableLand)
+        self.water = int(water)
+        self.potentialEnergyUsable = int(potentialEnergyUsable)
+
+
     def info(self):
         attributes = vars(self)
         for attribute, value in attributes.items():
