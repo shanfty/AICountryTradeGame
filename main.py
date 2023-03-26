@@ -8,7 +8,7 @@ import re
 import csv
 
 from countries import Country
-from resource import Resource
+from resources import Resource
 
 
 @dataclass
@@ -102,31 +102,25 @@ def state_quality(countries, resources):
     resource_dict = {r.name: r for r in resources}
     for country in countries:
         score = 0
-        #attributes = vars(country)
         attributes = {attr: getattr(country, attr) for attr in dir(country) if not callable(getattr(country, attr)) and not attr.startswith("__")}
         for attribute, value in attributes.items():
             if attribute in resource_dict:
-                # add the score for this resource to the total score for the country
                 score += value * resource_dict[attribute].weight
-        # return overall score
         return score
 
 def apply_transform_template(country: Country, template: TransformTemplate) -> None:
     newCountry = country
-    # Check if country has enough resources to perform transformation
     for input_resource in template.inputs:
         if input_resource.name == 'Population':
-            continue  # Population is not consumed
+            continue 
         if getattr(newCountry, input_resource.name) < input_resource.quantity:
             return None
     
-    # Subtract required inputs
     for input_resource in template.inputs:
         if input_resource.name == 'Population':
-            continue  # Population is not consumed
+            continue
         setattr(newCountry, input_resource.name, getattr(newCountry, input_resource.name) - input_resource.quantity)
     
-    # Add generated outputs
     for output_resource in template.outputs:
         setattr(newCountry, output_resource.name, getattr(newCountry, output_resource.name) + output_resource.quantity)
 
@@ -139,17 +133,16 @@ def search_best_transform(countries, transforms, resources):
         best_country = None
 
         for transform in transforms:
-            # apply the transform to each country
             count = 0
             for country in countries:
                 new_country = apply_transform_template(country, transform)
                 if(new_country == None):
                     continue
+
                 copyCountries = countries
                 copyCountries[count] = new_country
-                # calculate the score for the new list of countries
                 new_score = state_quality(copyCountries, resources)
-                # check if the new score is better than the current best score
+
                 if new_score > best_score:
                     best_score = new_score
                     best_transform = transform
@@ -188,7 +181,6 @@ def main():
 
     start_score = state_quality(countries, resources)
     
-
     templates = []
 
     alloysPath="./transforms/alloys.tmpl"
@@ -203,27 +195,41 @@ def main():
     electronicsTemplate = parse(electronicsPath)
     templates.append(electronicsTemplate)
 
-    best_transform, best_country = search_best_transform(countries,templates,resources)
+    f = open("output.txt","w")
+    f.write('Output File')
 
+    i = 0
+    for each in countries:
+        f.write("\nStarting Country:" + str(i) + ", ")
+        attributes = vars(each)
+        for attribute, value in attributes.items():
+            f.write(attribute + "=" + str(value)+ ", ")
+        i += 1
+
+    best_transform, best_country = search_best_transform(countries,templates,resources)
     transformIndex = 0
+
     while(best_transform != None):
         best_transform, best_country = search_best_transform(countries,templates,resources)
         if(best_transform != None):
             apply_transform_template(countries[best_country], best_transform)
             transformIndex += 1
+            f.write("\nTransform: " + str(transformIndex) + ", " + countries[best_country].name + ": " + best_transform.name)
 
     i = 0
     for each in countries:
-        print("Country " + str(i))
-        each.info()
-        print("\n")
+        f.write("\nEnding Country " + str(i) + ", ")
+        attributes = vars(each)
+        for attribute, value in attributes.items():
+            f.write(attribute + "=" + str(value) + ", ")
         i += 1
 
     end_score = state_quality(countries,resources)
 
-    print("\nTransforms made: " + str(transformIndex))
-    print("\nStarting State Quality Score: " + str(start_score))
-    print("\nEnding State Quality Score: " + str(end_score))
+    f.write("\nTransforms made: " + str(transformIndex))
+    f.write("\nStarting State Quality Score: " + str(start_score))
+    f.write("\nEnding State Quality Score: " + str(end_score))
+
 
 if __name__ == "__main__":
     main()
