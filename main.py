@@ -17,6 +17,8 @@ class ResourceQuantity:
   quantity: int = field()
 
 @dataclass
+# From John Ford, Parsing transform templates
+# posted to Piazza
 class TransformTemplate:
   name: str = field(default="")
   inputs: List[ResourceQuantity] = field(default_factory=list)
@@ -108,10 +110,21 @@ def state_quality(countries, resources):
                 score += value * resource_dict[attribute].weight
         return score
 
+def decay_tick(countries, resources):
+    resource_dict = {r.name: r for r in resources}
+    countryCount = 0
+    for country in countries:
+        attributes = {attr: getattr(country, attr) for attr in dir(country) if not callable(getattr(country, attr)) and not attr.startswith("__")}
+        for attribute, value in attributes.items():
+            if attribute in resource_dict:
+                setattr(country, attribute, value - (resource_dict[attribute].decayRate))
+        countryCount += 1
+    return countries
+
 def apply_transform_template(country: Country, template: TransformTemplate) -> None:
     newCountry = country
     for input_resource in template.inputs:
-        if input_resource.name == 'Population':
+        if input_resource.name == 'population':
             continue 
         if getattr(newCountry, input_resource.name) < input_resource.quantity:
             return None
@@ -127,36 +140,48 @@ def apply_transform_template(country: Country, template: TransformTemplate) -> N
     return newCountry
 
 
-def search_best_transform(countries, transforms, resources):
-        best_score = state_quality(countries, resources)
-        best_transform = None
-        best_country = None
+def recursive_apply_transformer(countries, countryId, country, transforms, depth, resources, currScore, transform_sequence=None):
+    if transform_sequence is None:
+        transform_sequence = []  # initialize the transform sequence if it is not provided
+    best_transform_sequence = []
+    best_score = currScore
+    
+    if depth == 0:
+        return transform_sequence, currScore
 
-        for transform in transforms:
-            count = 0
-            for country in countries:
-                new_country = apply_transform_template(country, transform)
-                if(new_country == None):
-                    continue
+    for transform in transforms:
+        new_country = apply_transform_template(country, transform)
+        if new_country is None:
+            continue
+        newCountries = countries
+        newCountries[countryId] = new_country
+        score = state_quality(newCountries,resources)
+        new_transform_sequence  = transform_sequence + [transform]
+        new_transform_sequence, score = recursive_apply_transformer(newCountries,countryId,new_country,transforms,depth-1,resources,score, new_transform_sequence)
+        if score > currScore:
+            best_score = score
+            best_transform_sequence = new_transform_sequence
+        depth = 3
+        new_transform_sequence = []
+        transform_sequence = []
+    return best_transform_sequence, best_score
 
-                copyCountries = countries
-                copyCountries[count] = new_country
-                new_score = state_quality(copyCountries, resources)
+def search_best_transform_deeper(countryId, country, countries, transforms, resources, depth=3):
+    best_score = state_quality(countries, resources)
+    best_transform_sequence = []
 
-                if new_score > best_score:
-                    best_score = new_score
-                    best_transform = transform
-                    best_country = count
-                count += 1
-                
-        return best_transform,best_country
-
+    transform_sequence, new_score = recursive_apply_transformer(countries, countryId, country, transforms, depth, resources, best_score)
+    if new_score > best_score:
+       best_score = new_score
+       best_transform_sequence = transform_sequence
+    
+    return best_transform_sequence
 
 def main():
     resourceCSV = read_csv("weights.csv")
     resources = []
     for resource_data in resourceCSV:
-        resource = Resource(resource_data['Resource'], resource_data['Weight'])
+        resource = Resource(resource_data['Resource'], resource_data['Weight'], resource_data['DecayRate'])
         resources.append(resource)
 
     for each in resources:
@@ -195,8 +220,8 @@ def main():
     electronicsTemplate = parse(electronicsPath)
     templates.append(electronicsTemplate)
 
-    f = open("output.txt","w")
-    f.write('Output File')
+    f = open("output1.txt","w")
+    f.write('Output1 File')
 
     i = 0
     for each in countries:
@@ -206,15 +231,25 @@ def main():
             f.write(attribute + "=" + str(value)+ ", ")
         i += 1
 
-    best_transform, best_country = search_best_transform(countries,templates,resources)
     transformIndex = 0
+    boolean = True
 
-    while(best_transform != None):
-        best_transform, best_country = search_best_transform(countries,templates,resources)
-        if(best_transform != None):
-            apply_transform_template(countries[best_country], best_transform)
+    while(boolean):
+        noTransforms = 0
+        countries = decay_tick(countries,resources)
+        for i, country in enumerate(countries):
+            best_transform_sequence = search_best_transform_deeper(i,country,countries,templates,resources)
+            if(len(best_transform_sequence) == 0):
+                noTransforms += 1
+                if(noTransforms == 3):
+                    boolean = False
+                    continue
             transformIndex += 1
-            f.write("\nTransform: " + str(transformIndex) + ", " + countries[best_country].name + ": " + best_transform.name)
+            for transform in best_transform_sequence:
+                if(apply_transform_template(countries[i],transform) == None):
+                    continue
+                countries[i] = apply_transform_template(countries[i],transform)
+        best_transform_sequence = []
 
     i = 0
     for each in countries:
