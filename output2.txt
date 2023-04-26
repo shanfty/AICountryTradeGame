@@ -1,0 +1,10 @@
+Output2 File
+Starting Country:0, name=Americas, population=1000, metallicElements=500, timber=1000, metallicAlloys=100, electronics=50, housing=5, metallicAlloysWaste=0, electronicsWaste=0, housingWaste=0, availableLand=1000, water=1000, potentialEnergyUsable=250, 
+Starting Country:1, name=EMEA, population=2000, metallicElements=750, timber=500, metallicAlloys=100, electronics=150, housing=5, metallicAlloysWaste=0, electronicsWaste=0, housingWaste=0, availableLand=50, water=50, potentialEnergyUsable=300, 
+Starting Country:2, name=Pacific, population=500, metallicElements=250, timber=50, metallicAlloys=50, electronics=50, housing=5, metallicAlloysWaste=0, electronicsWaste=0, housingWaste=0, availableLand=25, water=50, potentialEnergyUsable=50, 
+Ending Country 0, name=Americas, population=985.0, metallicElements=-1.0, timber=735.0, metallicAlloys=138.0, electronics=20.0, housing=40.0, metallicAlloysWaste=218, electronicsWaste=0, housingWaste=50.0, availableLand=950.0, water=950, potentialEnergyUsable=0, 
+Ending Country 1, name=EMEA, population=1985.0, metallicElements=401.0, timber=255.0, metallicAlloys=69.0, electronics=124.0, housing=36.0, metallicAlloysWaste=141, electronicsWaste=2, housingWaste=46.0, availableLand=4.0, water=2, potentialEnergyUsable=64, 
+Ending Country 2, name=Pacific, population=485.0, metallicElements=93.0, timber=-10.0, metallicAlloys=56.0, electronics=22.0, housing=-1.0, metallicAlloysWaste=65, electronicsWaste=1, housingWaste=9.0, availableLand=16.0, water=40, potentialEnergyUsable=2, 
+Transforms made: 44
+Starting State Quality Score: 470.0
+Ending State Quality Score: 574.0

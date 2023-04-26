@@ -1,0 +1,11 @@
+Resource,Weight,DecayRate
+population,0,1
+metallicElements,0,1
+timber,0,1
+metallicAlloys,3,2
+electronics,3,2
+housing,4,1
+metallicAlloyWaste,-1.04,0
+electronicWaste,-1.05,0
+housingWaste,-1.2,0
+availableLand,0,0
